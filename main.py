@@ -1,4 +1,5 @@
 import pygame
+import os
 
 # Initialize Pygame
 pygame.init()
@@ -15,7 +16,9 @@ branch = pygame.image.load("branch.png")
 cocoon = pygame.image.load("cocoon.png")
 butterfly_1 = pygame.image.load("butterfly_1.png")
 butterfly_2 = pygame.image.load("butterfly_2.png")
-egg = pygame.image.load("egg.png")
+
+# Load egg animation frames
+egg_frames = [pygame.image.load(os.path.join("ezgif-split", f"ezgif-frame-{i:03d}.png")) for i in range(1, 101)]
 
 # Resize images
 leaf_states = [pygame.transform.scale(img, (200, 100)) for img in leaf_states]
@@ -24,8 +27,6 @@ branch = pygame.transform.scale(branch, (300, 100))
 cocoon = pygame.transform.scale(cocoon, (80, 150))
 butterfly_1 = pygame.transform.scale(butterfly_1, (150, 150))
 butterfly_2 = pygame.transform.scale(butterfly_2, (150, 150))
-egg = pygame.transform.scale(egg, (50, 50))  # Initial size of the egg
-original_egg_size = 50  # Define the original size of the egg
 
 # Positions
 leaf_x, leaf_y = 300, 400
@@ -33,27 +34,18 @@ caterpillar_x, caterpillar_y = 50, 400
 branch_x, branch_y = 250, 150
 cocoon_x, cocoon_y = 350, 180
 butterfly_x, butterfly_y = 350, 180
+egg_target_x, egg_target_y = 40, 400  # Caterpillar's initial position
 
 # Animation Variables
 leaf_index = 0
-caterpillar_entering = True  # New stage for caterpillar entering
+caterpillar_entering = True
 caterpillar_eating = False
 caterpillar_moving = False
 forming_cocoon = False
 butterfly_emerging = False
 butterfly_flying = False
-zoom_factor = 2.0  # Start with a zoomed-in view
-zooming_out = True  # Start by zooming out
-zooming_in = False  # Zoom in at the end
-egg_stage = True  # Start with the egg stage
-
-# Add variables for egg position during zoom transitions
-egg_target_x, egg_target_y = 40, 550  # Caterpillar's initial position
-egg_center_x, egg_center_y = WIDTH // 2, HEIGHT // 2  # Center of the screen
-
-def lerp(start, end, t):
-    """Linear interpolation between start and end based on t (0-1)"""
-    return start + t * (end - start)
+egg_animation_playing = True  # Start with the animation sequence
+current_egg_frame = 0
 
 clock = pygame.time.Clock()
 frame_counter = 0
@@ -64,65 +56,20 @@ while running:
     screen.fill((255, 255, 255))  # White background
     frame_counter += 1
 
-    # mouse_x, mouse_y = pygame.mouse.get_pos()
-    # print(f"Mouse Coordinates: ({mouse_x}, {mouse_y})")
+    # Egg animation logic
+    if egg_animation_playing:
+        scaled_egg_frame = pygame.transform.scale(egg_frames[current_egg_frame], (150, 150))  # Adjust size as needed
+        screen.blit(scaled_egg_frame, (egg_target_x, egg_target_y))  # Draw at caterpillar position  # Draw at caterpillar position
 
-    # Egg zoom effect
-    if egg_stage:
-        if zooming_out:
-            # Gradually zoom out and move towards caterpillar position
-            zoom_factor -= 0.005  # Adjust speed as needed
+        # Advance to the next frame
+        if frame_counter % 5 == 0:  # Adjust speed by changing the modulus value
+            current_egg_frame += 1
 
-            # Calculate interpolated position (from center to caterpillar position)
-            t = (2.0 - zoom_factor) / 2.0  # Normalized value from 0 to 1
-            egg_x = int(lerp(egg_center_x, egg_target_x, t))
-            egg_y = int(lerp(egg_center_y, egg_target_y, t))
-
-            # Smoothly scale down the egg
-            current_egg_size = int(original_egg_size * zoom_factor)
-            egg_zoomed = pygame.transform.scale(egg, (current_egg_size, current_egg_size))
-
-            # Stop zooming out and prepare for the next stage
-            if zoom_factor <= 0.2:
-                zoom_factor = 1.0
-                zooming_out = False
-                egg_stage = False  # Transition to main animation
-
-            # Draw the zoomed and moved egg
-            screen.blit(egg_zoomed, (egg_x - current_egg_size // 2, egg_y - current_egg_size // 2))
-
-        elif zooming_in:
-            # Gradually zoom in and return to center
-            zoom_factor += 0.005  # Adjust speed as needed
-
-            # Calculate interpolated position (from caterpillar position to center)
-            t = (zoom_factor - 1.0)  # Normalized value from 0 to 1
-            egg_x = int(lerp(egg_target_x, egg_center_x, t))
-            egg_y = int(lerp(egg_target_y, egg_center_y, t))
-
-            # Smoothly scale up the egg
-            current_egg_size = int(original_egg_size * zoom_factor)
-            egg_zoomed = pygame.transform.scale(egg, (current_egg_size, current_egg_size))
-
-            # Stop zooming in and prepare for the next cycle
-            if zoom_factor >= 2.0:  # Stop zooming in when fully zoomed
-                zoom_factor = 2.0
-                zooming_in = False
-                zooming_out = True  # Restart the zoom-out effect
-                egg_stage = True  # Restart the egg stage
-
-                # Reset all animation variables for the next cycle
-                caterpillar_x, caterpillar_y = 50, 400  # Reset caterpillar position
-                leaf_index = 0
-                caterpillar_entering = True
-                caterpillar_eating = False
-                caterpillar_moving = False
-                forming_cocoon = False
-                butterfly_emerging = False
-                butterfly_flying = False
-            # Draw the zoomed and moved egg
-            screen.blit(egg_zoomed, (egg_x - current_egg_size // 2, egg_y - current_egg_size // 2))
-
+        # Check if the animation is complete
+        if current_egg_frame >= len(egg_frames):
+            current_egg_frame = 0  # Restart the animation
+            egg_animation_playing = False  # Transition to the next stage
+            caterpillar_entering = True  # Restart the cycle
     # Main animation logic
     elif caterpillar_entering:
         screen.blit(leaf_states[leaf_index], (leaf_x, leaf_y))
@@ -203,26 +150,34 @@ while running:
         else:
             screen.blit(butterfly_2, (butterfly_x, butterfly_y))
         
-        butterfly_x -= 2
-        butterfly_y += 2
+        # Move the butterfly toward the egg position
+        if butterfly_y < egg_target_y:
+            butterfly_x -= 2
+            butterfly_y += 2
+        else:
+            # Butterfly reaches the egg position
+            screen.blit(butterfly_1 if frame_counter % 10 < 5 else butterfly_2, (butterfly_x, butterfly_y))
+            scaled_egg_frame = pygame.transform.scale(egg_frames[0], (150, 150))  # Adjust size as needed
+            screen.blit(scaled_egg_frame, (egg_target_x, egg_target_y))
+            screen.blit(butterfly_1 if frame_counter % 10 < 5 else butterfly_2, (butterfly_x, butterfly_y))
 
-        if butterfly_y > 650:  # Once off screen, zoom back into the egg
-            butterfly_x, butterfly_y = 350, 180
-            caterpillar_x, caterpillar_y = -150, 420
-            leaf_index = 0
-            caterpillar = pygame.transform.scale(pygame.image.load("caterpillar.png"), (150, 80))
-            rotation_angle = 0
-            caterpillar_alpha = 255
-            cocoon_alpha = 0
-            forming_cocoon = False
-            butterfly_emerging = False
-            butterfly_flying = False
-            caterpillar_entering = True
-            caterpillar_eating = False
-            caterpillar_moving = False
-            zooming_in = True
-            egg_stage = True
-            butterfly_flying = False
+            # Check if the butterfly has left the screen
+            butterfly_y += 2  # Move the butterfly off the screen
+            if butterfly_y > HEIGHT:
+                butterfly_x, butterfly_y = 350, 180
+                caterpillar_x, caterpillar_y = 50,400
+                leaf_index = 0
+                caterpillar = pygame.transform.scale(pygame.image.load("caterpillar.png"), (150, 80))
+                rotation_angle = 0
+                caterpillar_alpha = 255
+                cocoon_alpha = 0
+                forming_cocoon = False
+                butterfly_emerging = False
+                butterfly_flying = False
+                caterpillar_entering = True
+                caterpillar_eating = False
+                caterpillar_moving = False
+                egg_animation_playing = True  # Start the egg animation
 
     # Event handling
     for event in pygame.event.get():
