@@ -16,9 +16,10 @@ branch = pygame.image.load("branch.png")
 cocoon = pygame.image.load("cocoon.png")
 butterfly_1 = pygame.image.load("butterfly_1.png")
 butterfly_2 = pygame.image.load("butterfly_2.png")
+bg = pygame.image.load("bg.png") 
 
 # Load egg animation frames
-egg_frames = [pygame.image.load(os.path.join("ezgif-split", f"ezgif-frame-{i:03d}.png")) for i in range(1, 101)]
+egg_frames = [pygame.image.load(os.path.join("ezgif-split", f"ezgif-frame-{i:03d}.png")) for i in range(7, 101)]
 
 # Resize images
 leaf_states = [pygame.transform.scale(img, (200, 100)) for img in leaf_states]
@@ -53,7 +54,7 @@ frame_counter = 0
 # Game loop
 running = True
 while running:
-    screen.fill((255, 255, 255))  # White background
+    screen.blit(bg, (0, 0))  # White background
     frame_counter += 1
 
     # Egg animation logic
