@@ -15,10 +15,10 @@ caterpillar = pygame.image.load("caterpillar.png")
 cocoon = pygame.image.load("cocoon.png")
 butterfly_1 = pygame.image.load("butterfly_1.png")
 butterfly_2 = pygame.image.load("butterfly_2.png")
-bg = pygame.image.load("bg2.png")  # Background image
+bg = pygame.image.load("bg3.png")  # Background image
 
 # Load egg animation frames
-egg_frames = [pygame.image.load(os.path.join("ezgif-split", f"ezgif-frame-{i:03d}.png")) for i in range(7, 101)]
+egg_frames = [pygame.image.load(os.path.join("ezgif-split", f"ezgif-frame-{i:03d}.png")) for i in range(9, 101)]
 
 # Load and resize cocoon transition frames
 cocoon_trans_frames = [
